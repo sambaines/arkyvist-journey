@@ -1,3 +1,107 @@
 /* CSS custom properties / design tokens */
+/* Dark "Archive" aesthetic: near-black backgrounds, teal brand, orange accent */
 :root {
+
+  /* ─── Colour: Surface / Background ────────────────────────────────────── */
+  --color-bg:               #0B0C11; /* neutral/1000 */
+  --color-surface:          #212028; /* neutral/900  */
+  --color-surface-raised:   #2C2A33; /* neutral/800  */
+  --color-surface-overlay:  #3A3540; /* neutral/700  */
+  --color-border:           #3A3540; /* neutral/700  */
+  --color-border-subtle:    #2C2A33; /* neutral/800  */
+
+  /* ─── Colour: Text ────────────────────────────────────────────────────── */
+  --color-text:             #FFFFFF; /* neutral/50   */
+  --color-text-muted:       #A3A0A7; /* neutral/300  */
+  --color-text-subtle:      #696370; /* neutral/500  */
+  --color-text-disabled:    #504A57; /* neutral/600  */
+
+  /* ─── Colour: Brand (teal) ────────────────────────────────────────────── */
+  --color-brand:            #068A84; /* teal/500     */
+  --color-brand-light:      #52B7B2; /* teal/400     */
+  --color-brand-lighter:    #8CD7D4; /* teal/300     */
+  --color-brand-dim:        #003C37; /* teal/700     */
+  --color-brand-dark:       #002521; /* teal/800     */
+
+  /* ─── Colour: Accent (orange) ─────────────────────────────────────────── */
+  --color-accent:           #F57C4A; /* orange/400   */
+  --color-accent-light:     #FFAD85; /* orange/300   */
+  --color-accent-dim:       #C24F20; /* orange/500   */
+
+  /* ─── Colour: Semantic ────────────────────────────────────────────────── */
+  --color-error:            #FF4D46;
+  --color-error-text:       #FF8376;
+  --color-error-bg:         #270D0A;
+  --color-error-border:     #721212;
+
+  --color-warning:          #D35BEE;
+  --color-warning-text:     #F094FF;
+  --color-warning-bg:       #1E0D21;
+  --color-warning-border:   #571B63;
+
+  --color-success:          #24C568;
+  --color-success-text:     #43EA8A;
+  --color-success-bg:       #121D11;
+  --color-success-border:   #11431B;
+
+  /* ─── Spacing (4 px base) ─────────────────────────────────────────────── */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-7:   28px;
+  --space-8:   32px;
+  --space-9:   36px;
+  --space-10:  40px;
+  --space-11:  44px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+
+  /* ─── Typography: Size ────────────────────────────────────────────────── */
+  --font-size-xs:   11px;
+  --font-size-sm:   13px;
+  --font-size-md:   15px;
+  --font-size-lg:   17px;
+  --font-size-xl:   20px;
+  --font-size-2xl:  24px;
+  --font-size-3xl:  30px;
+
+  /* ─── Typography: Weight ──────────────────────────────────────────────── */
+  --font-weight-regular:   400;
+  --font-weight-medium:    500;
+  --font-weight-semibold:  600;
+  --font-weight-bold:      700;
+
+  /* ─── Typography: Line height ─────────────────────────────────────────── */
+  --line-height-tight:    1.2;
+  --line-height-normal:   1.5;
+  --line-height-relaxed:  1.75;
+
+  /* ─── Typography: Family ──────────────────────────────────────────────── */
+  --font-family-sans: system-ui, -apple-system, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* ─── Border radius ───────────────────────────────────────────────────── */
+  --radius-sm:    4px;
+  --radius-md:    8px;
+  --radius-lg:    12px;
+  --radius-xl:    16px;
+  --radius-full:  9999px;
+
+  /* ─── Transitions ─────────────────────────────────────────────────────── */
+  --duration-fast:     120ms;
+  --duration-default:  200ms;
+  --duration-slow:     350ms;
+  --ease-default:      cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ─── Z-index layers ──────────────────────────────────────────────────── */
+  --z-map:      0;
+  --z-canvas:   10;
+  --z-panel:    20;
+  --z-overlay:  30;
+  --z-modal:    40;
+  --z-toast:    50;
 }
