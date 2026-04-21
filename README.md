@@ -1,3 +1,12 @@
+# Arkyvist Map Tool
+
+## Dev tooling
+
+### Agentation
+[Agentation](https://agentation.com) is installed as a dev dependency for visual annotation and AI feedback. It mounts automatically when running `yarn dev` — look for the toolbar in the bottom-right corner. It is excluded from production builds via a `import.meta.env.DEV` guard with a dynamic import in `src/main.tsx`.
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

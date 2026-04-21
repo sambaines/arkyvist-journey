@@ -8,3 +8,12 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+if (import.meta.env.DEV) {
+  import('agentation').then(({ Agentation }) => {
+    const el = document.createElement('div')
+    el.id = 'agentation-root'
+    document.body.appendChild(el)
+    createRoot(el).render(<Agentation />)
+  })
+}
