@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import type { Scale, DistanceUnit, AppMode } from '../../types'
+import type { Scale, DistanceUnit, AppMode, Route, AppAction } from '../../types'
 import type { CalibrationPoint } from '../canvas/renderCanvas'
+import RoutePanel from './RoutePanel'
 import './ControlPanel.css'
 
 const UNIT_OPTIONS: { value: DistanceUnit; label: string }[] = [
@@ -21,6 +22,9 @@ interface ControlPanelProps {
   scale: Scale
   mode: AppMode
   calibrationPoints: CalibrationPoint[]
+  routes: Route[]
+  activeRouteId: string
+  dispatch: React.Dispatch<AppAction>
   onEnterCalibration: () => void
   onCancelCalibration: () => void
   onConfirmCalibration: (distance: number) => void
@@ -32,6 +36,9 @@ export default function ControlPanel({
   scale,
   mode,
   calibrationPoints,
+  routes,
+  activeRouteId,
+  dispatch,
   onEnterCalibration,
   onCancelCalibration,
   onConfirmCalibration,
@@ -91,6 +98,19 @@ export default function ControlPanel({
       </button>
 
       <div className="control-panel__body">
+
+        {/* ── Routes (ARK-MAP-20 + ARK-MAP-21) ──────────────────────────── */}
+        <section className="panel-section">
+          <h3 className="panel-section__label">Routes</h3>
+          <RoutePanel
+            routes={routes}
+            activeRouteId={activeRouteId}
+            scale={scale}
+            dispatch={dispatch}
+          />
+        </section>
+
+        <div className="panel-divider" />
 
         {/* ── Unit selector (ARK-MAP-17) ─────────────────────────────────── */}
         <section className="panel-section">

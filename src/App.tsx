@@ -84,6 +84,14 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'SET_ACTIVE_ROUTE':
       return { ...state, activeRouteId: action.routeId }
 
+    case 'SET_ROUTE_COLOUR':
+      return {
+        ...state,
+        routes: state.routes.map(r =>
+          r.id === action.routeId ? { ...r, colour: action.colour } : r
+        ),
+      }
+
     // ── Waypoints (all operate on the active route) ──────────────────────────
 
     case 'ADD_WAYPOINT': {

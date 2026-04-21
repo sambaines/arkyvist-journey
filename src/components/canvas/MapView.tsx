@@ -107,6 +107,9 @@ export default function MapView({ map, scale, routes, activeRouteId, dispatch, o
         scale={scale}
         mode={mode}
         calibrationPoints={calibrationPoints}
+        routes={routes}
+        activeRouteId={activeRouteId}
+        dispatch={dispatch}
         onEnterCalibration={handleEnterCalibration}
         onCancelCalibration={handleCancelCalibration}
         onConfirmCalibration={handleConfirmCalibration}

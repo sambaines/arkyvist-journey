@@ -98,6 +98,7 @@ export type AppAction =
   | { type: 'DELETE_ROUTE'; routeId: string }
   | { type: 'TOGGLE_ROUTE_VISIBILITY'; routeId: string }
   | { type: 'SET_ACTIVE_ROUTE'; routeId: string }
+  | { type: 'SET_ROUTE_COLOUR'; routeId: string; colour: string }
   // ── Waypoint actions (operate on the active route) ─────────────────────────
   | { type: 'ADD_WAYPOINT'; x: number; y: number }
   | { type: 'UPDATE_WAYPOINT'; waypointId: string; x: number; y: number }
