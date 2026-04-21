@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import type { MapImage, Scale, AppMode } from '../../types'
+import type { MapImage, Scale, AppMode, Route, AppAction } from '../../types'
 import type { CalibrationPoint } from './renderCanvas'
 import { twoPointCalibration } from '../../lib/calculations'
 import { useMapTransform } from '../../hooks/useMapTransform'
@@ -11,11 +11,14 @@ import './MapView.css'
 interface MapViewProps {
   map: MapImage
   scale: Scale
+  routes: Route[]
+  activeRouteId: string
+  dispatch: React.Dispatch<AppAction>
   onClear: () => void
   onScaleChanged: (scale: Scale) => void
 }
 
-export default function MapView({ map, scale, onScaleChanged }: MapViewProps) {
+export default function MapView({ map, scale, routes, activeRouteId, dispatch, onScaleChanged }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isPanMode, setIsPanMode] = useState(true)
   const [mode, setMode] = useState<AppMode>('default')
