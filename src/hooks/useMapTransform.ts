@@ -1,16 +1,20 @@
 import { useState, useRef, useCallback, useEffect, type RefObject } from 'react'
 import type { MapTransform } from '../types'
 
-const ZOOM_STEP = 1.1
-const MAX_ZOOM = 8
+export const ZOOM_STEP = 1.2
+export const MAX_ZOOM = 8
 
-// Min zoom: map cannot become smaller than the viewport
+// Min zoom: map cannot become smaller than the viewport in either axis
 function computeMinZoom(mapWidth: number, mapHeight: number, vw: number, vh: number): number {
   return Math.max(vw / mapWidth, vh / mapHeight)
 }
 
-// Clamp pan so at least half the map remains visible in each axis.
-// When the map fits entirely in the viewport, centre it.
+// Clamp pan so the map always fully covers the viewport — no black bars.
+// When a dimension is smaller than the viewport (only possible if zoom < minZoom,
+// which shouldn't occur), centre it as a safe fallback.
+//
+// Coverage constraint: x ∈ [vw − sw, 0]  (left edge ≤ 0, right edge ≥ vw)
+//                      y ∈ [vh − sh, 0]  (top edge  ≤ 0, bottom edge ≥ vh)
 function clampPan(
   x: number,
   y: number,
@@ -25,17 +29,29 @@ function clampPan(
 
   const cx = sw <= vw
     ? (vw - sw) / 2
-    : Math.max(vw - sw * 0.5, Math.min(sw * 0.5, x))
+    : Math.max(vw - sw, Math.min(0, x))
 
   const cy = sh <= vh
     ? (vh - sh) / 2
-    : Math.max(vh - sh * 0.5, Math.min(sh * 0.5, y))
+    : Math.max(vh - sh, Math.min(0, y))
 
   return { x: cx, y: cy }
 }
 
+function centredPan(mapWidth: number, mapHeight: number, zoom: number, vw: number, vh: number) {
+  return {
+    x: (vw - mapWidth * zoom) / 2,
+    y: (vh - mapHeight * zoom) / 2,
+  }
+}
+
 export interface UseMapTransformResult {
   transform: MapTransform
+  canZoomIn: boolean
+  canZoomOut: boolean
+  zoomIn: () => void
+  zoomOut: () => void
+  resetView: () => void
   handlers: {
     onPointerDown: (e: React.PointerEvent) => void
     onPointerMove: (e: React.PointerEvent) => void
@@ -49,13 +65,18 @@ export function useMapTransform(
   mapHeight: number,
   containerRef: RefObject<HTMLElement | null>,
 ): UseMapTransformResult {
-  const [transform, setTransform] = useState<MapTransform>(() => ({
-    x: (window.innerWidth - mapWidth) / 2,
-    y: (window.innerHeight - mapHeight) / 2,
-    zoom: 1,
-  }))
+  const [minZoom, setMinZoom] = useState(() =>
+    computeMinZoom(mapWidth, mapHeight, window.innerWidth, window.innerHeight),
+  )
 
-  // Stable ref so event listeners can read the latest transform without re-registering
+  const [transform, setTransform] = useState<MapTransform>(() => {
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const zoom = computeMinZoom(mapWidth, mapHeight, vw, vh)
+    return { ...centredPan(mapWidth, mapHeight, zoom, vw, vh), zoom }
+  })
+
+  // Stable ref so pointer handlers always read the latest transform
   const transformRef = useRef(transform)
   const setTransformStable = useCallback((updater: (prev: MapTransform) => MapTransform) => {
     setTransform(prev => {
@@ -74,31 +95,72 @@ export function useMapTransform(
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
   const prevPinchDist = useRef<number | null>(null)
 
-  // Non-passive wheel listener — must use addEventListener to prevent page scroll
+  // Keep minZoom in sync if the viewport is resized
+  useEffect(() => {
+    const update = () => {
+      const el = containerRef.current
+      setMinZoom(computeMinZoom(
+        mapWidth, mapHeight,
+        el?.clientWidth ?? window.innerWidth,
+        el?.clientHeight ?? window.innerHeight,
+      ))
+    }
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [mapWidth, mapHeight, containerRef])
+
+  // Non-passive touch listener to prevent browser scroll/pinch interfering
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
+    const prevent = (e: TouchEvent) => e.preventDefault()
+    el.addEventListener('touchmove', prevent, { passive: false })
+    return () => el.removeEventListener('touchmove', prevent)
+  }, [containerRef])
 
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      const vw = el.clientWidth
-      const vh = el.clientHeight
-      const dir = e.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP
+  // ─── Zoom controls ──────────────────────────────────────────────────────
 
-      setTransformStable(current => {
-        const minZoom = computeMinZoom(mapWidth, mapHeight, vw, vh)
-        const newZoom = Math.max(minZoom, Math.min(MAX_ZOOM, current.zoom * dir))
-        const ratio = newZoom / current.zoom
-        const newX = e.clientX - ratio * (e.clientX - current.x)
-        const newY = e.clientY - ratio * (e.clientY - current.y)
-        const { x, y } = clampPan(newX, newY, newZoom, mapWidth, mapHeight, vw, vh)
-        return { x, y, zoom: newZoom }
-      })
+  function applyZoom(dir: number, focalX: number, focalY: number, vw: number, vh: number) {
+    setTransformStable(current => {
+      const minZoom = computeMinZoom(mapWidth, mapHeight, vw, vh)
+      const newZoom = Math.max(minZoom, Math.min(MAX_ZOOM, current.zoom * dir))
+      const ratio = newZoom / current.zoom
+      const newX = focalX - ratio * (focalX - current.x)
+      const newY = focalY - ratio * (focalY - current.y)
+      const { x, y } = clampPan(newX, newY, newZoom, mapWidth, mapHeight, vw, vh)
+      return { x, y, zoom: newZoom }
+    })
+  }
+
+  function getViewport() {
+    const el = containerRef.current
+    return {
+      vw: el?.clientWidth ?? window.innerWidth,
+      vh: el?.clientHeight ?? window.innerHeight,
     }
+  }
 
-    el.addEventListener('wheel', handleWheel, { passive: false })
-    return () => el.removeEventListener('wheel', handleWheel)
+  const zoomIn = useCallback(() => {
+    const { vw, vh } = getViewport()
+    applyZoom(ZOOM_STEP, vw / 2, vh / 2, vw, vh)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapWidth, mapHeight, containerRef, setTransformStable])
+
+  const zoomOut = useCallback(() => {
+    const { vw, vh } = getViewport()
+    applyZoom(1 / ZOOM_STEP, vw / 2, vh / 2, vw, vh)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapWidth, mapHeight, containerRef, setTransformStable])
+
+  const resetView = useCallback(() => {
+    const { vw, vh } = getViewport()
+    const zoom = computeMinZoom(mapWidth, mapHeight, vw, vh)
+    const { x, y } = centredPan(mapWidth, mapHeight, zoom, vw, vh)
+    setTransformStable(() => ({ x, y, zoom }))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapWidth, mapHeight, containerRef, setTransformStable])
+
+  // ─── Pointer events (pan + pinch) ───────────────────────────────────────
 
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
@@ -163,8 +225,17 @@ export function useMapTransform(
     if (pointersRef.current.size === 0) isPanning.current = false
   }, [])
 
+  const EPSILON = 0.001
+  const canZoomIn = transform.zoom < MAX_ZOOM - EPSILON
+  const canZoomOut = transform.zoom > minZoom + EPSILON
+
   return {
     transform,
+    canZoomIn,
+    canZoomOut,
+    zoomIn,
+    zoomOut,
+    resetView,
     handlers: {
       onPointerDown,
       onPointerMove,

@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import type { MapImage } from '../../types'
 import { useMapTransform } from '../../hooks/useMapTransform'
 import CanvasOverlay from './CanvasOverlay'
+import ZoomControls from '../ui/ZoomControls'
 import './MapView.css'
 
 interface MapViewProps {
@@ -11,7 +12,11 @@ interface MapViewProps {
 
 export default function MapView({ map }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { transform, handlers } = useMapTransform(map.width, map.height, containerRef)
+  const { transform, canZoomIn, canZoomOut, zoomIn, zoomOut, resetView, handlers } = useMapTransform(
+    map.width,
+    map.height,
+    containerRef,
+  )
 
   const cssTransform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.zoom})`
 
@@ -35,6 +40,14 @@ export default function MapView({ map }: MapViewProps) {
         />
         <CanvasOverlay width={map.width} height={map.height} />
       </div>
+
+      <ZoomControls
+        onZoomIn={zoomIn}
+        onZoomOut={zoomOut}
+        onReset={resetView}
+        canZoomIn={canZoomIn}
+        canZoomOut={canZoomOut}
+      />
     </div>
   )
 }
