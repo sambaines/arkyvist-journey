@@ -63,6 +63,15 @@
   display: none;
 }
 
+/* Active / toggled state (e.g. pan mode button) */
+.zoom-btn--active {
+  color: var(--color-brand-light);
+}
+
+.zoom-btn--active:hover:not(:disabled) {
+  color: var(--color-brand-light);
+}
+
 /* ─── Tooltip ────────────────────────────────────────────────────────────── */
 
 .zoom-btn::after {

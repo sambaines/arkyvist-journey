@@ -1,12 +1,17 @@
 import { useRef, useEffect } from 'react'
+import { renderCanvas } from './renderCanvas'
+import type { CanvasRenderState } from './renderCanvas'
 import './CanvasOverlay.css'
 
 interface CanvasOverlayProps {
   width: number
   height: number
+  renderState: CanvasRenderState
+  interactive?: boolean
+  onPointerUp?: (e: React.PointerEvent<HTMLCanvasElement>) => void
 }
 
-export default function CanvasOverlay({ width, height }: CanvasOverlayProps) {
+export default function CanvasOverlay({ width, height, renderState, interactive = false, onPointerUp }: CanvasOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -14,8 +19,8 @@ export default function CanvasOverlay({ width, height }: CanvasOverlayProps) {
     if (!canvas) return
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    ctx.clearRect(0, 0, width, height)
-  }, [width, height])
+    renderCanvas(ctx, renderState)
+  }, [width, height, renderState])
 
   return (
     <canvas
@@ -23,6 +28,8 @@ export default function CanvasOverlay({ width, height }: CanvasOverlayProps) {
       className="canvas-overlay"
       width={width}
       height={height}
+      style={interactive ? { pointerEvents: 'auto' } : undefined}
+      onPointerUp={onPointerUp}
     />
   )
 }

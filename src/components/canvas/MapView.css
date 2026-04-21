@@ -12,6 +12,22 @@
   cursor: grabbing;
 }
 
+.map-view--no-pan {
+  cursor: default;
+}
+
+.map-view--no-pan:active {
+  cursor: default;
+}
+
+.map-view--calibrating {
+  cursor: crosshair;
+}
+
+.map-view--calibrating:active {
+  cursor: crosshair;
+}
+
 .map-view__content {
   position: absolute;
   top: 0;

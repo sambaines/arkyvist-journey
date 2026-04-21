@@ -65,6 +65,8 @@ export interface MapSession {
 
 export type AppStatus = 'empty' | 'loaded';
 
+export type AppMode = 'default' | 'calibrating';
+
 export interface MapImage {
   objectUrl: string;
   width: number;    // natural image width in px
@@ -81,8 +83,23 @@ export interface MapTransform {
 export interface AppState {
   status: AppStatus;
   map: MapImage | null;
+  scale: Scale;
+  routes: Route[];
+  activeRouteId: string;
 }
 
 export type AppAction =
   | { type: 'MAP_LOADED'; map: MapImage }
-  | { type: 'SESSION_CLEARED' };
+  | { type: 'SESSION_CLEARED' }
+  | { type: 'SCALE_CHANGED'; scale: Scale }
+  // ── Route actions ──────────────────────────────────────────────────────────
+  | { type: 'CREATE_ROUTE' }
+  | { type: 'RENAME_ROUTE'; routeId: string; name: string }
+  | { type: 'DELETE_ROUTE'; routeId: string }
+  | { type: 'TOGGLE_ROUTE_VISIBILITY'; routeId: string }
+  | { type: 'SET_ACTIVE_ROUTE'; routeId: string }
+  // ── Waypoint actions (operate on the active route) ─────────────────────────
+  | { type: 'ADD_WAYPOINT'; x: number; y: number }
+  | { type: 'UPDATE_WAYPOINT'; waypointId: string; x: number; y: number }
+  | { type: 'DELETE_WAYPOINT'; waypointId: string }
+  | { type: 'SET_SEGMENT_TERRAIN'; waypointId: string; terrain: Terrain };
