@@ -60,3 +60,29 @@ export interface MapSession {
   activeRouteId: string;
   speedSettings: SpeedSettings;
 }
+
+// ─── App state ───────────────────────────────────────────────────────────────
+
+export type AppStatus = 'empty' | 'loaded';
+
+export interface MapImage {
+  objectUrl: string;
+  width: number;    // natural image width in px
+  height: number;   // natural image height in px
+  filename: string;
+}
+
+export interface MapTransform {
+  x: number;    // pan offset px (translate X)
+  y: number;    // pan offset px (translate Y)
+  zoom: number; // scale factor (1 = natural size)
+}
+
+export interface AppState {
+  status: AppStatus;
+  map: MapImage | null;
+}
+
+export type AppAction =
+  | { type: 'MAP_LOADED'; map: MapImage }
+  | { type: 'SESSION_CLEARED' };

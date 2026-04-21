@@ -1,0 +1,27 @@
+.map-view {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--color-bg);
+  cursor: grab;
+  touch-action: none; /* disable browser pan/pinch so we handle it ourselves */
+  user-select: none;
+}
+
+.map-view:active {
+  cursor: grabbing;
+}
+
+.map-view__content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  /* GPU-accelerated compositing */
+  will-change: transform;
+}
+
+.map-view__image {
+  display: block;
+  max-width: none; /* must not be constrained — renders at natural size */
+}
