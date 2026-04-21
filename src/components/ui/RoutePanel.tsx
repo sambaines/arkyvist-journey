@@ -15,7 +15,8 @@ function unitLabel(scale: Scale): string {
 }
 
 function formatDistance(route: Route, scale: Scale): string {
-  if (scale.pixelsPerUnit === 0 || route.waypoints.length < 2) return '—'
+  if (scale.pixelsPerUnit === 0) return '— set scale to calculate'
+  if (route.waypoints.length < 2) return '— add waypoints'
   const dist = routeTotalDistance(route, scale)
   const formatted = dist >= 10 ? dist.toFixed(1) : dist.toFixed(2)
   return `${formatted} ${unitLabel(scale)}`

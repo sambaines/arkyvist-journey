@@ -1,11 +1,13 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useMemo } from 'react'
 import type { MapImage, Scale, AppMode, Route, AppAction } from '../../types'
 import type { CalibrationPoint } from './renderCanvas'
 import { twoPointCalibration } from '../../lib/calculations'
 import { useMapTransform } from '../../hooks/useMapTransform'
+import { useCanvasInteraction } from '../../hooks/useCanvasInteraction'
 import CanvasOverlay from './CanvasOverlay'
 import ZoomControls from '../ui/ZoomControls'
 import ControlPanel from '../ui/ControlPanel'
+import WaypointContextMenu from '../ui/WaypointContextMenu'
 import './MapView.css'
 
 interface MapViewProps {
@@ -30,12 +32,12 @@ export default function MapView({ map, scale, routes, activeRouteId, dispatch, o
     containerRef,
   )
 
-  const cssTransform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.zoom})`
-
-  // Pan is only active in default mode when pan toggle is on
-  const isPanning = isPanMode && mode === 'default'
+  // ── Derived mode flags ───────────────────────────────────────────────────
   const isCalibrating = mode === 'calibrating'
+  const isPanning = isPanMode && !isCalibrating
+  const isWaypointMode = !isPanMode && !isCalibrating
 
+  // ── Calibration handlers ─────────────────────────────────────────────────
   function handleEnterCalibration() {
     setCalibrationPoints([])
     setMode('calibrating')
@@ -54,17 +56,43 @@ export default function MapView({ map, scale, routes, activeRouteId, dispatch, o
     setMode('default')
   }
 
-  function handleCanvasClick(e: React.PointerEvent<HTMLCanvasElement>) {
-    if (!isCalibrating || calibrationPoints.length >= 2) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const x = (e.clientX - rect.left) / transform.zoom
-    const y = (e.clientY - rect.top) / transform.zoom
+  function handleCalibrationPointerUp(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (calibrationPoints.length >= 2) return
+    const x = (e.clientX - transform.x) / transform.zoom
+    const y = (e.clientY - transform.y) / transform.zoom
     setCalibrationPoints(pts => [...pts, { x, y }])
   }
 
+  // ── Waypoint interaction ─────────────────────────────────────────────────
+  const { canvasHandlers: waypointHandlers, contextMenu, closeContextMenu } = useCanvasInteraction({
+    routes,
+    activeRouteId,
+    transform,
+    dispatch,
+    enabled: isWaypointMode,
+  })
+
+  // Canvas handlers are mode-dependent
+  const activeCanvasHandlers = isCalibrating
+    ? { onPointerUp: handleCalibrationPointerUp }
+    : isWaypointMode
+    ? waypointHandlers
+    : {}
+
+  // ── Render state (memoized to avoid spurious canvas redraws) ─────────────
+  const renderState = useMemo(() => ({
+    calibrationPoints,
+    routes,
+    activeRouteId,
+    transform,
+  }), [calibrationPoints, routes, activeRouteId, transform])
+
+  // ── CSS class ────────────────────────────────────────────────────────────
   let mapViewClass = 'map-view'
   if (isCalibrating) mapViewClass += ' map-view--calibrating'
   else if (!isPanning) mapViewClass += ' map-view--no-pan'
+
+  const cssTransform = `translate(${transform.x}px, ${transform.y}px) scale(${transform.zoom})`
 
   return (
     <div
@@ -72,10 +100,7 @@ export default function MapView({ map, scale, routes, activeRouteId, dispatch, o
       className={mapViewClass}
       {...(isPanning ? handlers : {})}
     >
-      <div
-        className="map-view__content"
-        style={{ transform: cssTransform }}
-      >
+      <div className="map-view__content" style={{ transform: cssTransform }}>
         <img
           className="map-view__image"
           src={map.objectUrl}
@@ -84,14 +109,12 @@ export default function MapView({ map, scale, routes, activeRouteId, dispatch, o
           alt={map.filename}
           draggable={false}
         />
-        <CanvasOverlay
-          width={map.width}
-          height={map.height}
-          renderState={{ calibrationPoints }}
-          interactive={isCalibrating}
-          onPointerUp={isCalibrating ? handleCanvasClick : undefined}
-        />
       </div>
+      <CanvasOverlay
+        renderState={renderState}
+        interactive={isCalibrating || !isPanMode}
+        handlers={activeCanvasHandlers}
+      />
 
       <ZoomControls
         onZoomIn={zoomIn}
@@ -120,6 +143,17 @@ export default function MapView({ map, scale, routes, activeRouteId, dispatch, o
           onScaleChanged({ ...scale, unit, customUnitLabel })
         }
       />
+
+      {contextMenu && (
+        <WaypointContextMenu
+          screenX={contextMenu.screenX}
+          screenY={contextMenu.screenY}
+          waypointId={contextMenu.waypointId}
+          isLastWaypoint={contextMenu.isLastWaypoint}
+          onDelete={() => dispatch({ type: 'DELETE_WAYPOINT', waypointId: contextMenu.waypointId })}
+          onClose={closeContextMenu}
+        />
+      )}
     </div>
   )
 }
