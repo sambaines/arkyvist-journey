@@ -3,11 +3,21 @@ import type { MapImage } from '../../types'
 import { useMapUpload } from '../../hooks/useMapUpload'
 import './EmptyState.css'
 
-interface EmptyStateProps {
-  onMapLoaded: (map: MapImage) => void
+interface SessionBanner {
+  type: 'restore' | 'shared'
+  mapFilename: string
+  routeCount: number
+  onAccept: () => void
+  onDismiss: () => void
 }
 
-export default function EmptyState({ onMapLoaded }: EmptyStateProps) {
+interface EmptyStateProps {
+  onMapLoaded: (map: MapImage) => void
+  onImportJson: (file: File) => void
+  sessionBanner: SessionBanner | null
+}
+
+export default function EmptyState({ onMapLoaded, onImportJson, sessionBanner }: EmptyStateProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const jsonInputRef = useRef<HTMLInputElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -41,6 +51,12 @@ export default function EmptyState({ onMapLoaded }: EmptyStateProps) {
     fileInputRef.current?.click()
   }
 
+  function handleJsonInputChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) onImportJson(file)
+    e.target.value = ''
+  }
+
   const hasStatus = !!(error || warning)
 
   return (
@@ -52,6 +68,41 @@ export default function EmptyState({ onMapLoaded }: EmptyStateProps) {
       </header>
 
       <main className="empty-state__main">
+
+        {sessionBanner && (
+          <div className={`session-banner session-banner--${sessionBanner.type}`}>
+            <div className="session-banner__body">
+              <p className="session-banner__label">
+                {sessionBanner.type === 'restore' ? 'Resume your last session?' : 'Load shared route?'}
+              </p>
+              <p className="session-banner__meta">
+                <span className="session-banner__filename">{sessionBanner.mapFilename}</span>
+                {sessionBanner.routeCount > 0 && (
+                  <span className="session-banner__routes">
+                    {' '}· {sessionBanner.routeCount} {sessionBanner.routeCount === 1 ? 'route' : 'routes'}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="session-banner__actions">
+              <button
+                className="session-banner__btn session-banner__btn--accept"
+                type="button"
+                onClick={sessionBanner.onAccept}
+              >
+                {sessionBanner.type === 'restore' ? 'Resume session' : 'Load'}
+              </button>
+              <button
+                className="session-banner__btn session-banner__btn--dismiss"
+                type="button"
+                onClick={sessionBanner.onDismiss}
+              >
+                {sessionBanner.type === 'restore' ? 'Start fresh' : 'Dismiss'}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div
           className={[
             'upload-zone',
@@ -147,7 +198,7 @@ export default function EmptyState({ onMapLoaded }: EmptyStateProps) {
             ref={jsonInputRef}
             type="file"
             accept=".json,application/json"
-            onChange={() => {/* JSON import — future task */}}
+            onChange={handleJsonInputChange}
             style={{ display: 'none' }}
             aria-hidden="true"
           />

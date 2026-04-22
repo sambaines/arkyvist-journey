@@ -1,0 +1,86 @@
+.awaiting-image-view {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+  position: relative;
+}
+
+/* ─── Centered prompt ─────────────────────────────────────────────────────── */
+
+.awaiting-image__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-10) var(--space-8);
+  background: var(--color-surface);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+}
+
+.awaiting-image__icon {
+  color: var(--color-text-subtle);
+  margin-bottom: var(--space-1);
+}
+
+.awaiting-image__title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  line-height: var(--line-height-tight);
+}
+
+.awaiting-image__hint {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.awaiting-image__filename {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-mono, monospace);
+  color: var(--color-brand-light);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-3);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.awaiting-image__browse {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-6);
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-brand);
+  background: transparent;
+  color: var(--color-brand-light);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-default),
+    color var(--duration-fast) var(--ease-default);
+}
+
+.awaiting-image__browse:hover {
+  background: var(--color-brand);
+  color: var(--color-bg);
+}
+
+.awaiting-image__types {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  letter-spacing: 0.04em;
+}

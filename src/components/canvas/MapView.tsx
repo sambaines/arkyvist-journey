@@ -20,9 +20,11 @@ interface MapViewProps {
   dispatch: React.Dispatch<AppAction>
   onClear: () => void
   onScaleChanged: (scale: Scale) => void
+  onExportSession: () => void
+  onCopyShareLink: () => Promise<void>
 }
 
-export default function MapView({ map, scale, routes, activeRouteId, speedSettings, dispatch, onScaleChanged }: MapViewProps) {
+export default function MapView({ map, scale, routes, activeRouteId, speedSettings, dispatch, onScaleChanged, onExportSession, onCopyShareLink }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isPanMode, setIsPanMode] = useState(true)
   const [mode, setMode] = useState<AppMode>('default')
@@ -145,6 +147,8 @@ export default function MapView({ map, scale, routes, activeRouteId, speedSettin
         onUnitChanged={(unit, customUnitLabel) =>
           onScaleChanged({ ...scale, unit, customUnitLabel })
         }
+        onExportSession={onExportSession}
+        onCopyShareLink={onCopyShareLink}
       />
 
       {contextMenu && (

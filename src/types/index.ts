@@ -63,7 +63,7 @@ export interface MapSession {
 
 // ─── App state ───────────────────────────────────────────────────────────────
 
-export type AppStatus = 'empty' | 'loaded';
+export type AppStatus = 'empty' | 'loaded' | 'awaiting-image';
 
 export type AppMode = 'default' | 'calibrating';
 
@@ -87,6 +87,7 @@ export interface AppState {
   routes: Route[];
   activeRouteId: string;
   speedSettings: SpeedSettings;
+  expectedMapFilename: string | null;
 }
 
 export type AppAction =
@@ -107,4 +108,7 @@ export type AppAction =
   | { type: 'SET_SEGMENT_TERRAIN'; waypointId: string; terrain: Terrain }
   // ── Travel speed actions ───────────────────────────────────────────────────
   | { type: 'SET_TRAVEL_SPEED'; modeId: string; speedPerDay: number }
-  | { type: 'RESET_TRAVEL_SPEEDS'; category: 'land' | 'water' };
+  | { type: 'RESET_TRAVEL_SPEEDS'; category: 'land' | 'water' }
+  // ── Session actions ────────────────────────────────────────────────────────
+  | { type: 'AWAITING_IMAGE_SESSION'; mapFilename: string; scale: Scale; routes: Route[]; activeRouteId: string; speedSettings: SpeedSettings }
+  | { type: 'SESSION_RESTORED'; map: MapImage; scale: Scale; routes: Route[]; activeRouteId: string; speedSettings: SpeedSettings };

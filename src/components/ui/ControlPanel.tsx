@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { Scale, DistanceUnit, AppMode, Route, AppAction, SpeedSettings } from '../../types'
 import type { CalibrationPoint } from '../canvas/renderCanvas'
 import RoutePanel from './RoutePanel'
@@ -27,11 +27,14 @@ interface ControlPanelProps {
   activeRouteId: string
   speedSettings: SpeedSettings
   dispatch: React.Dispatch<AppAction>
+  showCalibration?: boolean
   onEnterCalibration: () => void
   onCancelCalibration: () => void
   onConfirmCalibration: (distance: number) => void
   onManualCalibration: (pixels: number, distance: number) => void
   onUnitChanged: (unit: DistanceUnit, customUnitLabel?: string) => void
+  onExportSession: () => void
+  onCopyShareLink: () => Promise<void>
 }
 
 export default function ControlPanel({
@@ -42,14 +45,19 @@ export default function ControlPanel({
   activeRouteId,
   speedSettings,
   dispatch,
+  showCalibration = true,
   onEnterCalibration,
   onCancelCalibration,
   onConfirmCalibration,
   onManualCalibration,
   onUnitChanged,
+  onExportSession,
+  onCopyShareLink,
 }: ControlPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [speedsOpen, setSpeedsOpen] = useState(false)
+  const [copyLabel, setCopyLabel] = useState('Copy share link')
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Unit selector state
   const [customLabel, setCustomLabel] = useState(scale.customUnitLabel ?? '')
@@ -144,7 +152,7 @@ export default function ControlPanel({
         <div className="panel-divider" />
 
         {/* ── Scale / Calibration (ARK-MAP-15 + ARK-MAP-16) ─────────────── */}
-        <section className="panel-section">
+        {showCalibration !== false && <section className="panel-section">
           <h3 className="panel-section__label">Scale</h3>
 
           {/* Status indicator */}
@@ -261,9 +269,9 @@ export default function ControlPanel({
               </div>
             </>
           )}
-        </section>
+        </section>}
 
-        <div className="panel-divider" />
+        {showCalibration !== false && <div className="panel-divider" />}
 
         {/* ── Travel speeds (ARK-MAP-30) ─────────────────────────────────── */}
         <section className="panel-section">
@@ -290,6 +298,32 @@ export default function ControlPanel({
               dispatch={dispatch}
             />
           )}
+        </section>
+
+        <div className="panel-divider" />
+
+        {/* ── Session ──────────────────────────────────────────────────────── */}
+        <section className="panel-section">
+          <h3 className="panel-section__label">Session</h3>
+          <button
+            className="panel-btn panel-btn--secondary"
+            type="button"
+            onClick={onExportSession}
+          >
+            Export session
+          </button>
+          <button
+            className="panel-btn panel-btn--secondary"
+            type="button"
+            onClick={async () => {
+              await onCopyShareLink()
+              setCopyLabel('Copied!')
+              if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
+              copyTimerRef.current = setTimeout(() => setCopyLabel('Copy share link'), 2000)
+            }}
+          >
+            {copyLabel}
+          </button>
         </section>
 
       </div>
