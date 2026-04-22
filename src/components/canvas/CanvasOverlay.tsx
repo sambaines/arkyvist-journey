@@ -37,6 +37,15 @@ export default function CanvasOverlay({
     return () => observer.disconnect()
   }, [])
 
+  // Prevent browser scroll/default touch behaviours (e.g. iOS rubber-band) when interactive
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !interactive) return
+    const prevent = (e: TouchEvent) => e.preventDefault()
+    canvas.addEventListener('touchmove', prevent, { passive: false })
+    return () => canvas.removeEventListener('touchmove', prevent)
+  }, [interactive])
+
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return

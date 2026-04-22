@@ -52,6 +52,7 @@ export interface UseMapTransformResult {
   zoomIn: () => void
   zoomOut: () => void
   resetView: () => void
+  applyPinch: (ratio: number, midX: number, midY: number) => void
   handlers: {
     onPointerDown: (e: React.PointerEvent) => void
     onPointerMove: (e: React.PointerEvent) => void
@@ -139,6 +140,21 @@ export function useMapTransform(
       vh: el?.clientHeight ?? window.innerHeight,
     }
   }
+
+  const applyPinch = useCallback((ratio: number, midX: number, midY: number) => {
+    const el = containerRef.current
+    const vw = el?.clientWidth ?? window.innerWidth
+    const vh = el?.clientHeight ?? window.innerHeight
+    setTransformStable(current => {
+      const newZoom = Math.max(computeMinZoom(mapWidth, mapHeight, vw, vh), Math.min(MAX_ZOOM, current.zoom * ratio))
+      const zoomRatio = newZoom / current.zoom
+      const newX = midX - zoomRatio * (midX - current.x)
+      const newY = midY - zoomRatio * (midY - current.y)
+      const { x, y } = clampPan(newX, newY, newZoom, mapWidth, mapHeight, vw, vh)
+      return { x, y, zoom: newZoom }
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapWidth, mapHeight, containerRef, setTransformStable])
 
   const zoomIn = useCallback(() => {
     const { vw, vh } = getViewport()
@@ -236,6 +252,7 @@ export function useMapTransform(
     zoomIn,
     zoomOut,
     resetView,
+    applyPinch,
     handlers: {
       onPointerDown,
       onPointerMove,

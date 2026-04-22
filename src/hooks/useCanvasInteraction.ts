@@ -64,9 +64,10 @@ interface Options {
   transform: MapTransform
   dispatch: React.Dispatch<AppAction>
   enabled: boolean
+  applyPinch: (ratio: number, midX: number, midY: number) => void
 }
 
-export function useCanvasInteraction({ routes, activeRouteId, transform, dispatch, enabled }: Options) {
+export function useCanvasInteraction({ routes, activeRouteId, transform, dispatch, enabled, applyPinch }: Options) {
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const [terrainMenu, setTerrainMenu] = useState<TerrainMenuState | null>(null)
 
@@ -74,6 +75,10 @@ export function useCanvasInteraction({ routes, activeRouteId, transform, dispatc
   const draggingId = useRef<string | null>(null)
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const longPressFired = useRef(false)
+
+  // Multi-pointer tracking for pinch zoom in waypoint mode
+  const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const prevPinchDist = useRef<number | null>(null)
 
   function clearLongPress() {
     if (longPressTimer.current !== null) {
@@ -85,6 +90,18 @@ export function useCanvasInteraction({ routes, activeRouteId, transform, dispatc
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!enabled) return
     e.currentTarget.setPointerCapture(e.pointerId)
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+    // Second finger — switch to pinch zoom, cancel any waypoint interaction
+    if (activePointers.current.size >= 2) {
+      draggingId.current = null
+      clearLongPress()
+      pointerDownPos.current = null
+      const pts = [...activePointers.current.values()]
+      prevPinchDist.current = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y)
+      return
+    }
+
     pointerDownPos.current = { clientX: e.clientX, clientY: e.clientY }
     longPressFired.current = false
 
@@ -112,6 +129,21 @@ export function useCanvasInteraction({ routes, activeRouteId, transform, dispatc
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!enabled) return
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+    // Pinch zoom — two fingers active
+    if (activePointers.current.size >= 2) {
+      const pts = [...activePointers.current.values()]
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y)
+      if (prevPinchDist.current !== null) {
+        const ratio = dist / prevPinchDist.current
+        const midX = (pts[0].x + pts[1].x) / 2
+        const midY = (pts[0].y + pts[1].y) / 2
+        applyPinch(ratio, midX, midY)
+      }
+      prevPinchDist.current = dist
+      return
+    }
 
     // Cancel long press if pointer has drifted
     if (pointerDownPos.current) {
@@ -126,10 +158,13 @@ export function useCanvasInteraction({ routes, activeRouteId, transform, dispatc
 
     const { x, y } = clientToMap(e.clientX, e.clientY, transform)
     dispatch({ type: 'UPDATE_WAYPOINT', waypointId: draggingId.current, x, y })
-  }, [enabled, transform, dispatch])
+  }, [enabled, transform, dispatch, applyPinch])
 
   const onPointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!enabled) return
+    activePointers.current.delete(e.pointerId)
+    if (activePointers.current.size < 2) prevPinchDist.current = null
+    if (activePointers.current.size >= 1) return // Still have fingers down, don't process tap
     clearLongPress()
 
     // Long press already handled

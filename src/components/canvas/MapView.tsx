@@ -30,7 +30,7 @@ export default function MapView({ map, scale, routes, activeRouteId, speedSettin
   const [mode, setMode] = useState<AppMode>('default')
   const [calibrationPoints, setCalibrationPoints] = useState<CalibrationPoint[]>([])
 
-  const { transform, canZoomIn, canZoomOut, zoomIn, zoomOut, resetView, handlers } = useMapTransform(
+  const { transform, canZoomIn, canZoomOut, zoomIn, zoomOut, resetView, applyPinch, handlers } = useMapTransform(
     map.width,
     map.height,
     containerRef,
@@ -74,6 +74,7 @@ export default function MapView({ map, scale, routes, activeRouteId, speedSettin
     transform,
     dispatch,
     enabled: isWaypointMode,
+    applyPinch,
   })
 
   // Canvas handlers are mode-dependent
