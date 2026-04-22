@@ -5,6 +5,7 @@
   background: var(--color-bg);
   cursor: grab;
   touch-action: none; /* disable browser pan/pinch so we handle it ourselves */
+  -webkit-user-select: none;
   user-select: none;
 }
 

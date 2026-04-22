@@ -5,4 +5,5 @@
   height: 100%;
   pointer-events: none;
   display: block;
+  touch-action: none; /* prevent iOS Safari handling default touch gestures on the canvas */
 }
