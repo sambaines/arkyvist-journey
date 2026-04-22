@@ -1,4 +1,14 @@
-import type { TravelMode, Terrain } from '../types';
+import type { TravelMode, Terrain } from '../types'
+
+export const TERRAIN_INFO: Record<Terrain, { label: string; colour: string }> = {
+  road:           { label: 'Road',              colour: '#A0896B' },
+  open:           { label: 'Open Ground',       colour: '#7CB98F' },
+  forest:         { label: 'Forest',            colour: '#2D7A4A' },
+  mountains:      { label: 'Mountains',         colour: '#8C8C8C' },
+  marsh:          { label: 'Marsh / Swamp',     colour: '#6B8C8C' },
+  'water-river':  { label: 'Water (River)',     colour: '#4A90D9' },
+  'water-open':   { label: 'Water (Open Sea)',  colour: '#2B6CB0' },
+};
 
 export const ROUTE_PALETTE: string[] = [
   '#E63946', // red

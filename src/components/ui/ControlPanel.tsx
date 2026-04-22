@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import type { Scale, DistanceUnit, AppMode, Route, AppAction } from '../../types'
+import type { Scale, DistanceUnit, AppMode, Route, AppAction, SpeedSettings } from '../../types'
 import type { CalibrationPoint } from '../canvas/renderCanvas'
 import RoutePanel from './RoutePanel'
+import TravelSpeedsPanel from './TravelSpeedsPanel'
 import './ControlPanel.css'
 
 const UNIT_OPTIONS: { value: DistanceUnit; label: string }[] = [
@@ -24,6 +25,7 @@ interface ControlPanelProps {
   calibrationPoints: CalibrationPoint[]
   routes: Route[]
   activeRouteId: string
+  speedSettings: SpeedSettings
   dispatch: React.Dispatch<AppAction>
   onEnterCalibration: () => void
   onCancelCalibration: () => void
@@ -38,6 +40,7 @@ export default function ControlPanel({
   calibrationPoints,
   routes,
   activeRouteId,
+  speedSettings,
   dispatch,
   onEnterCalibration,
   onCancelCalibration,
@@ -46,6 +49,7 @@ export default function ControlPanel({
   onUnitChanged,
 }: ControlPanelProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [speedsOpen, setSpeedsOpen] = useState(false)
 
   // Unit selector state
   const [customLabel, setCustomLabel] = useState(scale.customUnitLabel ?? '')
@@ -106,6 +110,7 @@ export default function ControlPanel({
             routes={routes}
             activeRouteId={activeRouteId}
             scale={scale}
+            speedSettings={speedSettings}
             dispatch={dispatch}
           />
         </section>
@@ -255,6 +260,35 @@ export default function ControlPanel({
                 </button>
               </div>
             </>
+          )}
+        </section>
+
+        <div className="panel-divider" />
+
+        {/* ── Travel speeds (ARK-MAP-30) ─────────────────────────────────── */}
+        <section className="panel-section">
+          <button
+            className="panel-section__collapsible-header"
+            type="button"
+            onClick={() => setSpeedsOpen(o => !o)}
+            aria-expanded={speedsOpen}
+          >
+            <h3 className="panel-section__label">Travel Speeds</h3>
+            <svg
+              className={`panel-section__chevron${speedsOpen ? ' panel-section__chevron--open' : ''}`}
+              width="12" height="12" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {speedsOpen && (
+            <TravelSpeedsPanel
+              speedSettings={speedSettings}
+              scale={scale}
+              dispatch={dispatch}
+            />
           )}
         </section>
 

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react'
-import type { Route, Scale, AppAction } from '../../types'
-import { routeTotalDistance } from '../../lib/calculations'
+import type { Route, Scale, AppAction, SpeedSettings } from '../../types'
+import { routeTotalDistance, travelTimeForRoute } from '../../lib/calculations'
+import { TERRAIN_MODIFIERS } from '../../lib/constants'
 import './RoutePanel.css'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -20,6 +21,13 @@ function formatDistance(route: Route, scale: Scale): string {
   const dist = routeTotalDistance(route, scale)
   const formatted = dist >= 10 ? dist.toFixed(1) : dist.toFixed(2)
   return `${formatted} ${unitLabel(scale)}`
+}
+
+function formatTravelTime(days: number, hours: number): string {
+  if (days === 0 && hours === 0) return '< 1 hr'
+  if (days === 0) return `${hours} hr${hours !== 1 ? 's' : ''}`
+  if (hours === 0) return `${days} day${days !== 1 ? 's' : ''}`
+  return `${days}d ${hours}h`
 }
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -51,16 +59,91 @@ function TrashIcon() {
   )
 }
 
+function ChevronDownIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
+}
+
+// ─── Travel times sub-section ─────────────────────────────────────────────────
+
+interface TravelTimesProps {
+  route: Route
+  scale: Scale
+  speedSettings: SpeedSettings
+}
+
+function TravelTimes({ route, scale, speedSettings }: TravelTimesProps) {
+  const [open, setOpen] = useState(false)
+
+  const noScale = scale.pixelsPerUnit === 0
+  const noWaypoints = route.waypoints.length < 2
+
+  return (
+    <div className="travel-times">
+      <button
+        className={`travel-times__toggle${open ? ' travel-times__toggle--open' : ''}`}
+        type="button"
+        onClick={() => setOpen(o => !o)}
+      >
+        <span>Travel times</span>
+        <ChevronDownIcon />
+      </button>
+
+      {open && (
+        <div className="travel-times__body">
+          {noScale ? (
+            <p className="travel-times__hint">— set scale to calculate</p>
+          ) : noWaypoints ? (
+            <p className="travel-times__hint">— add waypoints</p>
+          ) : (
+            <>
+              {(['land', 'water'] as const).map(category => {
+                const modes = speedSettings.modes.filter(m => m.category === category)
+                return (
+                  <div key={category} className="travel-times__group">
+                    <span className="travel-times__group-label">{category === 'land' ? 'Land' : 'Water'}</span>
+                    {modes.map(mode => {
+                      const result = travelTimeForRoute(route, scale, mode, TERRAIN_MODIFIERS)
+                      let display: string
+                      if (result === null) {
+                        display = mode.category === 'land' ? 'N/A — water crossing' : 'N/A — land route'
+                      } else {
+                        display = formatTravelTime(result.days, result.hours)
+                      }
+                      return (
+                        <div key={mode.id} className="travel-times__row">
+                          <span className="travel-times__mode">{mode.label}</span>
+                          <span className={`travel-times__value${result === null ? ' travel-times__value--na' : ''}`}>
+                            {display}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 interface RoutePanelProps {
   routes: Route[]
   activeRouteId: string
   scale: Scale
+  speedSettings: SpeedSettings
   dispatch: React.Dispatch<AppAction>
 }
 
-export default function RoutePanel({ routes, activeRouteId, scale, dispatch }: RoutePanelProps) {
+export default function RoutePanel({ routes, activeRouteId, scale, speedSettings, dispatch }: RoutePanelProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -129,7 +212,7 @@ export default function RoutePanel({ routes, activeRouteId, scale, dispatch }: R
                   onClick={e => e.stopPropagation()}
                 />
 
-                {/* Name + distance */}
+                {/* Name + distance + travel times */}
                 <div
                   className="route-item__info"
                   onClick={e => e.stopPropagation()}
@@ -156,6 +239,9 @@ export default function RoutePanel({ routes, activeRouteId, scale, dispatch }: R
                     </span>
                   )}
                   <span className="route-item__distance">{formatDistance(route, scale)}</span>
+                  {isActive && (
+                    <TravelTimes route={route} scale={scale} speedSettings={speedSettings} />
+                  )}
                 </div>
 
                 {/* Actions */}

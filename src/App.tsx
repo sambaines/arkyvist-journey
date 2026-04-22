@@ -1,6 +1,6 @@
 import { useReducer } from 'react'
 import type { AppState, AppAction, MapImage, Route, Scale, Waypoint } from './types'
-import { ROUTE_PALETTE } from './lib/constants'
+import { ROUTE_PALETTE, DEFAULT_TRAVEL_MODES } from './lib/constants'
 import EmptyState from './components/ui/EmptyState'
 import MapView from './components/canvas/MapView'
 
@@ -26,6 +26,7 @@ function makeInitialState(): AppState {
     scale: DEFAULT_SCALE,
     routes: [firstRoute],
     activeRouteId: firstRoute.id,
+    speedSettings: { modes: DEFAULT_TRAVEL_MODES.map(m => ({ ...m })) },
   }
 }
 
@@ -151,6 +152,30 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ),
       }
 
+    // ── Travel speeds ────────────────────────────────────────────────────────
+
+    case 'SET_TRAVEL_SPEED':
+      return {
+        ...state,
+        speedSettings: {
+          modes: state.speedSettings.modes.map(m =>
+            m.id === action.modeId ? { ...m, baseSpeedPerDay: action.speedPerDay } : m
+          ),
+        },
+      }
+
+    case 'RESET_TRAVEL_SPEEDS':
+      return {
+        ...state,
+        speedSettings: {
+          modes: state.speedSettings.modes.map(m => {
+            if (m.category !== action.category) return m
+            const defaults = DEFAULT_TRAVEL_MODES.find(d => d.id === m.id)
+            return defaults ? { ...m, baseSpeedPerDay: defaults.baseSpeedPerDay } : m
+          }),
+        },
+      }
+
     default:
       return state
   }
@@ -168,6 +193,7 @@ export default function App() {
         scale={state.scale}
         routes={state.routes}
         activeRouteId={state.activeRouteId}
+        speedSettings={state.speedSettings}
         dispatch={dispatch}
         onClear={() => dispatch({ type: 'SESSION_CLEARED' })}
         onScaleChanged={scale => dispatch({ type: 'SCALE_CHANGED', scale })}

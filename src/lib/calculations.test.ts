@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { twoPointCalibration, pixelsToUnits, pixelDistanceBetween, segmentDistance, routeTotalDistance } from './calculations'
-import type { Waypoint, Route } from '../types'
+import { twoPointCalibration, pixelsToUnits, pixelDistanceBetween, segmentDistance, routeTotalDistance, travelTime, travelTimeForRoute } from './calculations'
+import type { Waypoint, Route, TravelMode } from '../types'
 
 function makeWaypoint(x: number, y: number, id = crypto.randomUUID()): Waypoint {
   return { id, x, y, terrainToNext: 'open' }
@@ -84,5 +84,67 @@ describe('pixelsToUnits', () => {
 
   it('floating point: 100px at 3.7 px/unit → correct to 2dp', () => {
     expect(pixelsToUnits(100, { pixelsPerUnit: 3.7, unit: 'miles' })).toBeCloseTo(27.03, 2)
+  })
+})
+
+describe('travelTime', () => {
+  it('24 units at 24/day → 1 day 0 hours', () => {
+    expect(travelTime(24, 24)).toEqual({ days: 1, hours: 0 })
+  })
+
+  it('12 units at 24/day → 0 days 12 hours', () => {
+    expect(travelTime(12, 24)).toEqual({ days: 0, hours: 12 })
+  })
+
+  it('100 units at 30/day → 3 days 8 hours', () => {
+    expect(travelTime(100, 30)).toEqual({ days: 3, hours: 8 })
+  })
+})
+
+describe('travelTimeForRoute', () => {
+  const landMode: TravelMode = { id: 'foot', label: 'Foot', category: 'land', baseSpeedPerDay: 24 }
+  const waterMode: TravelMode = { id: 'boat', label: 'Boat', category: 'water', baseSpeedPerDay: 24 }
+  const sc = { pixelsPerUnit: 10, unit: 'miles' as const }
+
+  it('empty route → 0 days 0 hours', () => {
+    expect(travelTimeForRoute(makeRoute([]), sc, landMode)).toEqual({ days: 0, hours: 0 })
+  })
+
+  it('single waypoint → 0 days 0 hours', () => {
+    expect(travelTimeForRoute(makeRoute([makeWaypoint(0, 0)]), sc, landMode)).toEqual({ days: 0, hours: 0 })
+  })
+
+  it('all-road route: computes correct aggregate time', () => {
+    // 240px = 24 units at 24/day → 1 day
+    const wps: Waypoint[] = [
+      { ...makeWaypoint(0, 0), terrainToNext: 'road' },
+      makeWaypoint(240, 0),
+    ]
+    expect(travelTimeForRoute(makeRoute(wps), sc, landMode)).toEqual({ days: 1, hours: 0 })
+  })
+
+  it('forest segment applies 0.5 modifier', () => {
+    // 240px = 24 units, forest modifier 0.5 → effective speed 12/day → 2 days
+    const wps: Waypoint[] = [
+      { ...makeWaypoint(0, 0), terrainToNext: 'forest' },
+      makeWaypoint(240, 0),
+    ]
+    expect(travelTimeForRoute(makeRoute(wps), sc, landMode)).toEqual({ days: 2, hours: 0 })
+  })
+
+  it('land mode on water segment → returns null', () => {
+    const wps: Waypoint[] = [
+      { ...makeWaypoint(0, 0), terrainToNext: 'water-open' },
+      makeWaypoint(240, 0),
+    ]
+    expect(travelTimeForRoute(makeRoute(wps), sc, landMode)).toBeNull()
+  })
+
+  it('water mode on land segment → returns null', () => {
+    const wps: Waypoint[] = [
+      { ...makeWaypoint(0, 0), terrainToNext: 'open' },
+      makeWaypoint(240, 0),
+    ]
+    expect(travelTimeForRoute(makeRoute(wps), sc, waterMode)).toBeNull()
   })
 })

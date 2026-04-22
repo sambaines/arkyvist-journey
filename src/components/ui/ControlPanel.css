@@ -46,6 +46,28 @@
   letter-spacing: 0.07em;
 }
 
+.panel-section__collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+}
+
+.panel-section__chevron {
+  color: var(--color-text-subtle);
+  flex-shrink: 0;
+  transition: transform var(--duration-fast) var(--ease-default);
+}
+
+.panel-section__chevron--open {
+  transform: rotate(180deg);
+}
+
 .panel-divider {
   height: 1px;
   background: var(--color-border-subtle);

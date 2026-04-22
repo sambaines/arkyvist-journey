@@ -86,6 +86,7 @@ export interface AppState {
   scale: Scale;
   routes: Route[];
   activeRouteId: string;
+  speedSettings: SpeedSettings;
 }
 
 export type AppAction =
@@ -103,4 +104,7 @@ export type AppAction =
   | { type: 'ADD_WAYPOINT'; x: number; y: number }
   | { type: 'UPDATE_WAYPOINT'; waypointId: string; x: number; y: number }
   | { type: 'DELETE_WAYPOINT'; waypointId: string }
-  | { type: 'SET_SEGMENT_TERRAIN'; waypointId: string; terrain: Terrain };
+  | { type: 'SET_SEGMENT_TERRAIN'; waypointId: string; terrain: Terrain }
+  // ── Travel speed actions ───────────────────────────────────────────────────
+  | { type: 'SET_TRAVEL_SPEED'; modeId: string; speedPerDay: number }
+  | { type: 'RESET_TRAVEL_SPEEDS'; category: 'land' | 'water' };

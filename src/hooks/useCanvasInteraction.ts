@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from 'react'
-import type { Route, AppAction, MapTransform } from '../types'
+import type { Route, AppAction, MapTransform, Terrain } from '../types'
 
 const HIT_RADIUS_SCREEN_PX = 12
 const DRAG_THRESHOLD_PX = 5
@@ -10,6 +10,13 @@ export interface ContextMenuState {
   screenY: number
   waypointId: string
   isLastWaypoint: boolean
+}
+
+export interface TerrainMenuState {
+  screenX: number
+  screenY: number
+  waypointId: string
+  currentTerrain: Terrain
 }
 
 // Convert client coords → map-image-space coords
@@ -32,6 +39,25 @@ function hitWaypoint(routes: Route[], activeRouteId: string, mapX: number, mapY:
   }) ?? null
 }
 
+// Find a segment midpoint in the active route within hit radius
+function hitSegmentMidpoint(routes: Route[], activeRouteId: string, mapX: number, mapY: number, zoom: number) {
+  const route = routes.find(r => r.id === activeRouteId)
+  if (!route || route.waypoints.length < 2) return null
+  const r = HIT_RADIUS_SCREEN_PX / zoom
+  for (let i = 0; i < route.waypoints.length - 1; i++) {
+    const wp = route.waypoints[i]
+    const next = route.waypoints[i + 1]
+    const mx = (wp.x + next.x) / 2
+    const my = (wp.y + next.y) / 2
+    const dx = mx - mapX
+    const dy = my - mapY
+    if (dx * dx + dy * dy <= r * r) {
+      return { waypointId: wp.id, terrain: wp.terrainToNext }
+    }
+  }
+  return null
+}
+
 interface Options {
   routes: Route[]
   activeRouteId: string
@@ -42,6 +68,7 @@ interface Options {
 
 export function useCanvasInteraction({ routes, activeRouteId, transform, dispatch, enabled }: Options) {
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+  const [terrainMenu, setTerrainMenu] = useState<TerrainMenuState | null>(null)
 
   const pointerDownPos = useRef<{ clientX: number; clientY: number } | null>(null)
   const draggingId = useRef<string | null>(null)
@@ -121,16 +148,27 @@ export function useCanvasInteraction({ routes, activeRouteId, transform, dispatc
       return // position already committed via pointermove
     }
 
-    // Tap: only add waypoint if pointer barely moved
+    // Tap: only act if pointer barely moved
     if (pointerDownPos.current) {
       const dx = e.clientX - pointerDownPos.current.clientX
       const dy = e.clientY - pointerDownPos.current.clientY
       if (dx * dx + dy * dy < DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) {
         const { x: mapX, y: mapY } = clientToMap(e.clientX, e.clientY, transform)
-        // Don't add a waypoint if we tapped an existing one
-        const hit = hitWaypoint(routes, activeRouteId, mapX, mapY, transform.zoom)
-        if (!hit) {
-          dispatch({ type: 'ADD_WAYPOINT', x: mapX, y: mapY })
+
+        // Waypoint takes priority over midpoint
+        const waypointHit = hitWaypoint(routes, activeRouteId, mapX, mapY, transform.zoom)
+        if (!waypointHit) {
+          const midHit = hitSegmentMidpoint(routes, activeRouteId, mapX, mapY, transform.zoom)
+          if (midHit) {
+            setTerrainMenu({
+              screenX: e.clientX,
+              screenY: e.clientY,
+              waypointId: midHit.waypointId,
+              currentTerrain: midHit.terrain,
+            })
+          } else {
+            dispatch({ type: 'ADD_WAYPOINT', x: mapX, y: mapY })
+          }
         }
       }
     }
@@ -158,5 +196,7 @@ export function useCanvasInteraction({ routes, activeRouteId, transform, dispatc
     canvasHandlers: { onPointerDown, onPointerMove, onPointerUp, onContextMenu },
     contextMenu,
     closeContextMenu: () => setContextMenu(null),
+    terrainMenu,
+    closeTerrainMenu: () => setTerrainMenu(null),
   }
 }

@@ -1,4 +1,5 @@
-import type { Route, MapTransform } from '../../types'
+import type { Route, MapTransform, Terrain } from '../../types'
+import { TERRAIN_INFO } from '../../lib/constants'
 
 // Hard-coded token values — CSS vars cannot be used in Canvas API
 const BRAND_TEAL = '#068A84'
@@ -48,32 +49,52 @@ function drawRoute(ctx: CanvasRenderingContext2D, route: Route, isActive: boolea
   const { waypoints, colour } = route
   if (waypoints.length === 0) return
 
-  // Divide by zoom so sizes stay constant in screen pixels regardless of zoom level
   const lineWidth = (isActive ? 3 : 2) / zoom
   const dotRadius = (isActive ? 8 : 6) / zoom
   const outlineWidth = 1.5 / zoom
+  const alpha = isActive ? 1 : 0.75
 
-  // Polyline
   if (waypoints.length >= 2) {
-    ctx.save()
-    ctx.beginPath()
-    ctx.moveTo(waypoints[0].x, waypoints[0].y)
-    for (let i = 1; i < waypoints.length; i++) {
-      ctx.lineTo(waypoints[i].x, waypoints[i].y)
+    if (isActive) {
+      // Draw each segment individually with terrain-specific line style
+      for (let i = 0; i < waypoints.length - 1; i++) {
+        const wp = waypoints[i]
+        const next = waypoints[i + 1]
+        drawSegment(ctx, wp.x, wp.y, next.x, next.y, wp.terrainToNext, colour, lineWidth, alpha, zoom)
+      }
+    } else {
+      // Single solid polyline for inactive routes
+      ctx.save()
+      ctx.beginPath()
+      ctx.moveTo(waypoints[0].x, waypoints[0].y)
+      for (let i = 1; i < waypoints.length; i++) {
+        ctx.lineTo(waypoints[i].x, waypoints[i].y)
+      }
+      ctx.strokeStyle = colour
+      ctx.lineWidth = lineWidth
+      ctx.lineJoin = 'round'
+      ctx.lineCap = 'round'
+      ctx.globalAlpha = alpha
+      ctx.stroke()
+      ctx.restore()
     }
-    ctx.strokeStyle = colour
-    ctx.lineWidth = lineWidth
-    ctx.lineJoin = 'round'
-    ctx.lineCap = 'round'
-    ctx.globalAlpha = isActive ? 1 : 0.75
-    ctx.stroke()
-    ctx.restore()
+  }
+
+  // Terrain midpoint indicators (active route only)
+  if (isActive && waypoints.length >= 2) {
+    for (let i = 0; i < waypoints.length - 1; i++) {
+      const wp = waypoints[i]
+      const next = waypoints[i + 1]
+      const mx = (wp.x + next.x) / 2
+      const my = (wp.y + next.y) / 2
+      drawMidpointIndicator(ctx, mx, my, wp.terrainToNext, zoom)
+    }
   }
 
   // Waypoint dots
   for (const wp of waypoints) {
     ctx.save()
-    ctx.globalAlpha = isActive ? 1 : 0.75
+    ctx.globalAlpha = alpha
     ctx.beginPath()
     ctx.arc(wp.x, wp.y, dotRadius, 0, Math.PI * 2)
     ctx.fillStyle = colour
@@ -86,6 +107,58 @@ function drawRoute(ctx: CanvasRenderingContext2D, route: Route, isActive: boolea
 
   // Route label near first waypoint
   drawRouteLabel(ctx, route.name, waypoints[0].x, waypoints[0].y, isActive, zoom)
+}
+
+function drawSegment(
+  ctx: CanvasRenderingContext2D,
+  x1: number, y1: number,
+  x2: number, y2: number,
+  terrain: Terrain,
+  colour: string,
+  lineWidth: number,
+  alpha: number,
+  zoom: number,
+) {
+  ctx.save()
+  ctx.beginPath()
+  ctx.moveTo(x1, y1)
+  ctx.lineTo(x2, y2)
+  ctx.strokeStyle = colour
+  ctx.lineWidth = lineWidth
+  ctx.lineCap = 'round'
+  ctx.globalAlpha = alpha
+
+  if (terrain === 'water-river' || terrain === 'water-open') {
+    ctx.setLineDash([8 / zoom, 5 / zoom])
+  } else if (terrain === 'forest' || terrain === 'mountains' || terrain === 'marsh') {
+    ctx.setLineDash([3 / zoom, 4 / zoom])
+  }
+
+  ctx.stroke()
+  ctx.restore()
+}
+
+function drawMidpointIndicator(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  terrain: Terrain,
+  zoom: number,
+) {
+  const radius = 5 / zoom
+  const fillColour = TERRAIN_INFO[terrain].colour
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(x, y, radius, 0, Math.PI * 2)
+  ctx.fillStyle = fillColour
+  ctx.globalAlpha = terrain === 'road' || terrain === 'open' ? 0.5 : 0.85
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'
+  ctx.lineWidth = 1 / zoom
+  ctx.globalAlpha = terrain === 'road' || terrain === 'open' ? 0.4 : 0.8
+  ctx.stroke()
+  ctx.restore()
 }
 
 function drawRouteLabel(

@@ -1,5 +1,5 @@
 import { useRef, useState, useMemo } from 'react'
-import type { MapImage, Scale, AppMode, Route, AppAction } from '../../types'
+import type { MapImage, Scale, AppMode, Route, AppAction, SpeedSettings } from '../../types'
 import type { CalibrationPoint } from './renderCanvas'
 import { twoPointCalibration } from '../../lib/calculations'
 import { useMapTransform } from '../../hooks/useMapTransform'
@@ -8,6 +8,7 @@ import CanvasOverlay from './CanvasOverlay'
 import ZoomControls from '../ui/ZoomControls'
 import ControlPanel from '../ui/ControlPanel'
 import WaypointContextMenu from '../ui/WaypointContextMenu'
+import TerrainPicker from '../ui/TerrainPicker'
 import './MapView.css'
 
 interface MapViewProps {
@@ -15,12 +16,13 @@ interface MapViewProps {
   scale: Scale
   routes: Route[]
   activeRouteId: string
+  speedSettings: SpeedSettings
   dispatch: React.Dispatch<AppAction>
   onClear: () => void
   onScaleChanged: (scale: Scale) => void
 }
 
-export default function MapView({ map, scale, routes, activeRouteId, dispatch, onScaleChanged }: MapViewProps) {
+export default function MapView({ map, scale, routes, activeRouteId, speedSettings, dispatch, onScaleChanged }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isPanMode, setIsPanMode] = useState(true)
   const [mode, setMode] = useState<AppMode>('default')
@@ -64,7 +66,7 @@ export default function MapView({ map, scale, routes, activeRouteId, dispatch, o
   }
 
   // ── Waypoint interaction ─────────────────────────────────────────────────
-  const { canvasHandlers: waypointHandlers, contextMenu, closeContextMenu } = useCanvasInteraction({
+  const { canvasHandlers: waypointHandlers, contextMenu, closeContextMenu, terrainMenu, closeTerrainMenu } = useCanvasInteraction({
     routes,
     activeRouteId,
     transform,
@@ -132,6 +134,7 @@ export default function MapView({ map, scale, routes, activeRouteId, dispatch, o
         calibrationPoints={calibrationPoints}
         routes={routes}
         activeRouteId={activeRouteId}
+        speedSettings={speedSettings}
         dispatch={dispatch}
         onEnterCalibration={handleEnterCalibration}
         onCancelCalibration={handleCancelCalibration}
@@ -152,6 +155,16 @@ export default function MapView({ map, scale, routes, activeRouteId, dispatch, o
           isLastWaypoint={contextMenu.isLastWaypoint}
           onDelete={() => dispatch({ type: 'DELETE_WAYPOINT', waypointId: contextMenu.waypointId })}
           onClose={closeContextMenu}
+        />
+      )}
+
+      {terrainMenu && (
+        <TerrainPicker
+          screenX={terrainMenu.screenX}
+          screenY={terrainMenu.screenY}
+          currentTerrain={terrainMenu.currentTerrain}
+          onSelect={terrain => dispatch({ type: 'SET_SEGMENT_TERRAIN', waypointId: terrainMenu.waypointId, terrain })}
+          onClose={closeTerrainMenu}
         />
       )}
     </div>

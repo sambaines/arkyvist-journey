@@ -1,0 +1,92 @@
+.travel-speeds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.travel-speeds__section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.travel-speeds__section-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-1);
+}
+
+.travel-speeds__reset {
+  margin-top: var(--space-2);
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  font-family: var(--font-family-sans);
+  transition: color var(--duration-fast) var(--ease-default);
+}
+
+.travel-speeds__reset:hover {
+  color: var(--color-brand-light);
+}
+
+/* ─── Speed row ───────────────────────────────────────────────────────────── */
+
+.speed-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px 0;
+}
+
+.speed-row__label {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.speed-row__input {
+  width: 52px;
+  flex-shrink: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-family-sans);
+  font-variant-numeric: tabular-nums;
+  padding: 2px var(--space-2);
+  text-align: right;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-default);
+}
+
+.speed-row__input:focus {
+  border-color: var(--color-brand);
+}
+
+/* Remove spinners */
+.speed-row__input[type="number"]::-webkit-inner-spin-button,
+.speed-row__input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+.speed-row__input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.speed-row__unit {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
